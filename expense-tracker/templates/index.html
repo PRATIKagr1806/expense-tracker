@@ -1,0 +1,123 @@
+<!DOCTYPE html> <!-- tells the browser this is an HTML5 page -->
+<html> <!-- start of the page -->
+<head> <!-- settings and styles live here (not shown on the page) -->
+  <title>Expense Tracker</title> <!-- text shown on the browser tab -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- loads the Chart.js library to draw charts -->
+  <style> /* start of the CSS (design) */
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 30px auto; padding: 0 15px; } /* font, page width, centered */
+    h1 { text-align: center; } /* centers the main heading */
+    h2 { margin-top: 35px; } /* space above the section headings */
+    form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; } /* puts form boxes in a row with gaps */
+    input, select, button { padding: 8px; } /* adds space inside the boxes and buttons */
+    button { background: #2563eb; color: white; border: none; cursor: pointer; border-radius: 4px; } /* blue button */
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; } /* table fills the page width */
+    th, td { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; } /* line under each row */
+    .total { font-size: 20px; font-weight: bold; } /* big bold text for the total */
+    .del { background: #dc2626; } /* red color for the Delete button */
+    .chart-box { max-width: 350px; margin: 20px auto; } /* keeps the pie chart small and centered */
+    .chart-wide { max-width: 800px; margin: 20px auto; } /* wider box for the bar charts */
+    .cards { display: flex; gap: 15px; margin: 20px 0; } /* puts the two total boxes side by side */
+    .card { flex: 1; background: #eff6ff; border-radius: 8px; padding: 15px; text-align: center; font-size: 18px; } /* light blue box */
+  </style> <!-- end of the CSS -->
+</head> <!-- end of head -->
+<body> <!-- everything the user sees goes here -->
+  <h1>Expense Tracker</h1> <!-- big heading -->
+  <p style="text-align:center">Logged in as <b>{{ username }}</b> | <a href="/logout">Logout</a></p> <!-- shows the username and a logout link -->
+
+  <form action="/add" method="POST"> <!-- form that sends data to /add when submitted -->
+    <input type="number" name="amount" step="0.01" placeholder="Amount" required> <!-- box for the amount (decimals allowed) -->
+    <select name="category"> <!-- dropdown for the category -->
+      <option>Food</option> <!-- dropdown choice -->
+      <option>Travel</option> <!-- dropdown choice -->
+      <option>Shopping</option> <!-- dropdown choice -->
+      <option>Bills</option> <!-- dropdown choice -->
+      <option>Other</option> <!-- dropdown choice -->
+    </select> <!-- end of dropdown -->
+    <input type="date" name="date" value="{{ today }}" required> <!-- date picker, starts with today's date -->
+    <input type="text" name="note" placeholder="Note (optional)"> <!-- box for an optional note -->
+    <button type="submit">Add</button> <!-- button that submits the form -->
+  </form> <!-- end of form -->
+
+  <p class="total">Total spent: ₹{{ "%.2f"|format(grand_total) }}</p> <!-- shows the total with 2 decimals -->
+
+  <div class="cards"> <!-- row holding the two total boxes -->
+    <div class="card">Today<br><b>₹{{ "%.2f"|format(today_total) }}</b></div> <!-- box showing today's total -->
+    <div class="card">This month<br><b>₹{{ "%.2f"|format(month_total) }}</b></div> <!-- box showing this month's total -->
+  </div> <!-- end of row -->
+
+  {% if values %} {# only show the charts and tables if there is at least one expense #}
+
+  <h2>Spending by category</h2> <!-- section heading -->
+  <div class="chart-box"> <!-- box that holds the pie chart -->
+    <canvas id="chart"></canvas> <!-- empty drawing area where the pie chart appears -->
+  </div> <!-- end of box -->
+
+  <h2>Daily spending</h2> <!-- section heading -->
+  <div class="chart-wide"> <!-- box that holds the daily chart -->
+    <canvas id="dailyChart"></canvas> <!-- empty drawing area for the daily chart -->
+  </div> <!-- end of box -->
+  <table> <!-- table of daily totals -->
+    <tr><th>Date</th><th>Total spent</th></tr> <!-- header row -->
+    {% for d in daily %} {# repeat for each day #}
+    <tr><td>{{ d["date"] }}</td><td>₹{{ "%.2f"|format(d["total"]) }}</td></tr> <!-- one row: date and its total -->
+    {% endfor %} {# end of the repeat #}
+  </table> <!-- end of table -->
+
+  <h2>Monthly spending</h2> <!-- section heading -->
+  <div class="chart-wide"> <!-- box that holds the monthly chart -->
+    <canvas id="monthlyChart"></canvas> <!-- empty drawing area for the monthly chart -->
+  </div> <!-- end of box -->
+  <table> <!-- table of monthly totals -->
+    <tr><th>Month</th><th>Total spent</th></tr> <!-- header row -->
+    {% for m in monthly %} {# repeat for each month #}
+    <tr><td>{{ m["month"] }}</td><td>₹{{ "%.2f"|format(m["total"]) }}</td></tr> <!-- one row: month and its total -->
+    {% endfor %} {# end of the repeat #}
+  </table> <!-- end of table -->
+
+  <script> /* start of JavaScript for all 3 charts */
+    new Chart(document.getElementById("chart"), { /* create the pie chart in the first canvas */
+      type: "pie", /* chart type: pie */
+      data: { /* the data to show */
+        labels: {{ labels | tojson }}, /* category names from Python */
+        datasets: [{ data: {{ values | tojson }} }] /* category totals from Python */
+      } /* end of data */
+    }); /* end of pie chart */
+
+    new Chart(document.getElementById("dailyChart"), { /* create a chart in the daily canvas */
+      type: "bar", /* chart type: bars */
+      data: { /* the data to show */
+        labels: {{ daily_labels | tojson }}, /* the dates, from Python */
+        datasets: [{ label: "Daily spending (₹)", data: {{ daily_values | tojson }}, backgroundColor: "#2563eb" }] /* the totals, in blue */
+      } /* end of data */
+    }); /* end of daily chart */
+
+    new Chart(document.getElementById("monthlyChart"), { /* create a chart in the monthly canvas */
+      type: "bar", /* chart type: bars */
+      data: { /* the data to show */
+        labels: {{ monthly_labels | tojson }}, /* the months, from Python */
+        datasets: [{ label: "Monthly spending (₹)", data: {{ monthly_values | tojson }}, backgroundColor: "#16a34a" }] /* the totals, in green */
+      } /* end of data */
+    }); /* end of monthly chart */
+  </script> <!-- end of JavaScript -->
+
+  {% endif %} {# end of the if #}
+
+  <h2>All expenses</h2> <!-- section heading -->
+  <table> <!-- table of all expenses -->
+    <tr><th>Date</th><th>Category</th><th>Amount</th><th>Note</th><th></th></tr> <!-- the header row -->
+    {% for e in expenses %} {# repeat the block below for each expense #}
+    <tr> <!-- one row for one expense -->
+      <td>{{ e["date"] }}</td> <!-- date column -->
+      <td>{{ e["category"] }}</td> <!-- category column -->
+      <td>₹{{ "%.2f"|format(e["amount"]) }}</td> <!-- amount column with 2 decimals -->
+      <td>{{ e["note"] }}</td> <!-- note column -->
+      <td> <!-- column for the Delete button -->
+        <form action="/delete/{{ e['id'] }}" method="POST" style="margin:0"> <!-- sends this expense's id to /delete -->
+          <button class="del" type="submit">Delete</button> <!-- red Delete button -->
+        </form> <!-- end of form -->
+      </td> <!-- end of column -->
+    </tr> <!-- end of row -->
+    {% endfor %} {# end of the repeat #}
+  </table> <!-- end of table -->
+</body> <!-- end of body -->
+</html> <!-- end of page -->

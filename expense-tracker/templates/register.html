@@ -1,0 +1,23 @@
+<!DOCTYPE html> <!-- tells the browser this is an HTML5 page -->
+<html> <!-- start of the page -->
+<head> <!-- settings and styles -->
+  <title>Register</title> <!-- text shown on the browser tab -->
+  <style> /* start of the CSS (design) */
+    body { font-family: Arial, sans-serif; max-width: 350px; margin: 80px auto; padding: 0 15px; } /* small centered page */
+    h1 { text-align: center; } /* centers the heading */
+    input, button { width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box; } /* full-width boxes with space between */
+    button { background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; } /* blue button */
+    .error { color: #dc2626; } /* red text for error messages */
+  </style> <!-- end of the CSS -->
+</head> <!-- end of head -->
+<body> <!-- everything the user sees -->
+  <h1>Create account</h1> <!-- big heading -->
+  {% if error %}<p class="error">{{ error }}</p>{% endif %} {# show the error message only if there is one #}
+  <form method="POST"> <!-- form that sends data back to this same page -->
+    <input type="text" name="username" placeholder="Username" required> <!-- username box -->
+    <input type="password" name="password" placeholder="Password" required> <!-- password box (hides the letters) -->
+    <button type="submit">Register</button> <!-- button that submits the form -->
+  </form> <!-- end of form -->
+  <p>Already have an account? <a href="/login">Login</a></p> <!-- link to the login page -->
+</body> <!-- end of body -->
+</html> <!-- end of page -->
